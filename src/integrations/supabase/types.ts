@@ -14,7 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      households: {
+        Row: {
+          budget_cap: number
+          created_at: string
+          dietary_preferences: string[]
+          family_members: Json
+          household_name: string | null
+          id: string
+          preferred_brands: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_cap?: number
+          created_at?: string
+          dietary_preferences?: string[]
+          family_members?: Json
+          household_name?: string | null
+          id?: string
+          preferred_brands?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_cap?: number
+          created_at?: string
+          dietary_preferences?: string[]
+          family_members?: Json
+          household_name?: string | null
+          id?: string
+          preferred_brands?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          created_at: string
+          id: string
+          parts: Json
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parts?: Json
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parts?: Json
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pending_actions: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          service: string
+          status: string
+          subtotal: number
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          service?: string
+          status?: string
+          subtotal?: number
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          service?: string
+          status?: string
+          subtotal?: number
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          brand: string | null
+          category: string
+          created_at: string
+          diet_tags: string[]
+          id: string
+          is_veg: boolean
+          name: string
+          price: number
+          service: string
+          unit: string | null
+        }
+        Insert: {
+          brand?: string | null
+          category: string
+          created_at?: string
+          diet_tags?: string[]
+          id?: string
+          is_veg?: boolean
+          name: string
+          price: number
+          service?: string
+          unit?: string | null
+        }
+        Update: {
+          brand?: string | null
+          category?: string
+          created_at?: string
+          diet_tags?: string[]
+          id?: string
+          is_veg?: boolean
+          name?: string
+          price?: number
+          service?: string
+          unit?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
