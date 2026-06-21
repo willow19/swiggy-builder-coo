@@ -86,7 +86,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "An AI concierge for busy Indian families. Describe a situation and get a ready-to-approve grocery or food cart based on your family's preferences.",
       },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Household Chief of Staff" },
+      { property: "og:title", content: "Household Chief of Staff — One message to run your household" },
       {
         property: "og:description",
         content: "One WhatsApp-style message to run your household. Confirm-first AI ordering.",
@@ -94,6 +94,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Household Chief of Staff — One message to run your household" },
+      { name: "description", content: "Swiggy AI Builder helps users generate app ideas using Swiggy's LLM capabilities." },
+      { property: "og:description", content: "Swiggy AI Builder helps users generate app ideas using Swiggy's LLM capabilities." },
+      { name: "twitter:description", content: "Swiggy AI Builder helps users generate app ideas using Swiggy's LLM capabilities." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2ff169aa-d8be-4ce9-a36f-a1b8df3f2122/id-preview-3c90fedf--8fc12dfd-8cdb-40eb-b010-2ad84b202a12.lovable.app-1782044631641.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/2ff169aa-d8be-4ce9-a36f-a1b8df3f2122/id-preview-3c90fedf--8fc12dfd-8cdb-40eb-b010-2ad84b202a12.lovable.app-1782044631641.png" },
     ],
     links: [
       {
