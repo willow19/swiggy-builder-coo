@@ -181,7 +181,7 @@ ${catalog}`;
                 user_id: userId,
                 client_id: m.id,
                 role: m.role,
-                parts: m.parts as unknown as object,
+                parts: m.parts as unknown as never,
               }));
               await supabase
                 .from("messages")
