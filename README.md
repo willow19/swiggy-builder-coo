@@ -1,6 +1,12 @@
-# Chief of Staff
+# Indian Household Chief of Staff
 
 An AI-powered household assistant for Indian families.
+
+🔗 Live Demo: https://swiggy-builder-coo.lovable.app/
+
+## Screenshot
+
+![Chief of Staff Demo](docs/demo-home.png)
 
 Instead of searching for products, restaurants, or groceries, users simply describe a real-world situation:
 
