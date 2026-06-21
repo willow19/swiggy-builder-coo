@@ -79,11 +79,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Household Chief of Staff — One message to run your household" },
+      {
+        name: "description",
+        content:
+          "An AI concierge for busy Indian families. Describe a situation and get a ready-to-approve grocery or food cart based on your family's preferences.",
+      },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Household Chief of Staff" },
+      {
+        property: "og:description",
+        content: "One WhatsApp-style message to run your household. Confirm-first AI ordering.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
