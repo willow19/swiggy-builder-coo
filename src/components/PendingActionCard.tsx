@@ -8,6 +8,7 @@ import {
   getPendingAction,
   updatePendingAction,
   setPendingActionStatus,
+  getHousehold,
 } from "@/lib/household.functions";
 import { Button } from "@/components/ui/button";
 
@@ -26,10 +27,16 @@ export function PendingActionCard({ pendingActionId }: { pendingActionId: string
   const getAction = useServerFn(getPendingAction);
   const updateAction = useServerFn(updatePendingAction);
   const setStatus = useServerFn(setPendingActionStatus);
+  const fetchHousehold = useServerFn(getHousehold);
 
   const { data, isLoading } = useQuery({
     queryKey: ["pending_action", pendingActionId],
     queryFn: () => getAction({ data: { id: pendingActionId } }),
+  });
+
+  const { data: household } = useQuery({
+    queryKey: ["household"],
+    queryFn: () => fetchHousehold(),
   });
 
   const [items, setItems] = useState<CartItem[]>([]);
@@ -77,7 +84,6 @@ export function PendingActionCard({ pendingActionId }: { pendingActionId: string
   }
 
   const subtotal = items.reduce((s, it) => s + it.price * it.quantity, 0);
-  const budgetCap = 0; // budget shown via data; recompute below
   const status = data.status as string;
   const isPending = status === "pending";
 
@@ -147,7 +153,7 @@ export function PendingActionCard({ pendingActionId }: { pendingActionId: string
           <span className="text-muted-foreground">Subtotal</span>
           <span className="text-base font-bold text-foreground">₹{subtotal}</span>
         </div>
-        <BudgetBar subtotal={subtotal} budgetCap={Number(data.budget_cap_snapshot ?? NaN)} />
+        <BudgetBar subtotal={subtotal} budgetCap={Number(household?.budget_cap ?? NaN)} />
 
         {status === "confirmed" && (
           <div className="flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-sm font-medium text-accent">
