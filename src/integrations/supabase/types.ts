@@ -52,6 +52,7 @@ export type Database = {
       }
       messages: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           parts: Json
@@ -59,6 +60,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           parts?: Json
@@ -66,6 +68,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           parts?: Json
