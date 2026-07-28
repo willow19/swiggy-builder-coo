@@ -1,17 +1,27 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChefHat, Send, SlidersHorizontal, LogOut, Loader2 } from "lucide-react";
+import { ChefHat, Send, SlidersHorizontal, LogOut, Loader2, MessageSquarePlus } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { getMessages } from "@/lib/household.functions";
+import { getMessages, clearMessages } from "@/lib/household.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { HouseholdSheet } from "@/components/HouseholdSheet";
 import { PendingActionCard } from "@/components/PendingActionCard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: ChatApp,
@@ -27,7 +37,10 @@ const SUGGESTIONS = [
 function ChatApp() {
   const navigate = useNavigate();
   const fetchMessages = useServerFn(getMessages);
+  const clearMessagesFn = useServerFn(clearMessages);
+  const queryClient = useQueryClient();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -95,6 +108,14 @@ function ChatApp() {
     navigate({ to: "/auth" });
   };
 
+  const handleNewChat = async () => {
+    await clearMessagesFn();
+    setMessages([]);
+    await queryClient.invalidateQueries({ queryKey: ["messages"] });
+    setConfirmClearOpen(false);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
   const isEmpty = messages.length === 0 && !loadingHistory;
 
   return (
@@ -108,6 +129,15 @@ function ChatApp() {
           <p className="truncate text-xs text-muted-foreground">Your household concierge</p>
         </div>
         <div className="ml-auto flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setConfirmClearOpen(true)}
+            disabled={messages.length === 0 || busy}
+            title="Start a new chat"
+          >
+            <MessageSquarePlus className="mr-1.5 h-4 w-4" /> New
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => setProfileOpen(true)}>
             <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Household
           </Button>
@@ -188,6 +218,22 @@ function ChatApp() {
       </div>
 
       <HouseholdSheet open={profileOpen} onOpenChange={setProfileOpen} />
+
+      <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start a new chat?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This clears the current conversation so the assistant starts fresh. Your household
+              preferences and past orders are not affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleNewChat}>Start new chat</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
