@@ -120,26 +120,35 @@ function ChatApp() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      <header className="flex items-center gap-3 border-b border-border bg-card/80 px-4 py-3 backdrop-blur">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+      <header className="flex items-center gap-2 border-b border-border bg-card/80 px-3 py-3 backdrop-blur sm:gap-3 sm:px-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <ChefHat className="h-5 w-5" />
         </div>
         <div className="min-w-0">
           <h1 className="truncate text-sm font-bold text-foreground">Chief of Staff</h1>
           <p className="truncate text-xs text-muted-foreground">Your household concierge</p>
         </div>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="sm:w-auto sm:px-3"
             onClick={() => setConfirmClearOpen(true)}
             disabled={messages.length === 0 || busy}
             title="Start a new chat"
           >
-            <MessageSquarePlus className="mr-1.5 h-4 w-4" /> New
+            <MessageSquarePlus className="h-4 w-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">New</span>
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => setProfileOpen(true)}>
-            <SlidersHorizontal className="mr-1.5 h-4 w-4" /> Household
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:w-auto sm:px-3"
+            onClick={() => setProfileOpen(true)}
+            title="Household"
+          >
+            <SlidersHorizontal className="h-4 w-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">Household</span>
           </Button>
           <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
             <LogOut className="h-4 w-4" />
