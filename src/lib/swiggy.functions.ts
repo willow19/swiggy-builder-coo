@@ -70,7 +70,9 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
           ? "Your Swiggy sign-in completed, but Swiggy's MCP server rejected the token format it issued (Incorrect alg in MCP JWT). Reconnecting will not fix this; please share this message with the Swiggy Builders team."
           : needsReauth
             ? "Swiggy rejected the saved sign-in. Tap Connect Swiggy and sign in again with your phone + OTP."
-            : clean || "Unknown error",
+            : notFound
+              ? "Swiggy's live service answered 'not found' for that request. Your sign-in is still saved — please publish the latest version and try the check again."
+              : clean || "Unknown error",
       };
     }
   });
