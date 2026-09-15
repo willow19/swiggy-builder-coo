@@ -48,7 +48,12 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
       return await runSwiggyDiagnostic(context.userId);
     } catch (e) {
       const raw = e instanceof Error ? e.message : "Unknown error";
-      const needsReauth = /401|unauthorized|419|invalid_token|incorrect alg|404/i.test(raw);
+      // Swiggy currently issues HS256 access tokens (also shown in its public
+      // auth example), while its MCP verifier can answer "Incorrect alg in MCP
+      // JWT". Re-authentication produces the same token type, so distinguish
+      // that provider-side mismatch from an expired or revoked sign-in.
+      const tokenFormatMismatch = /incorrect alg/i.test(raw);
+      const needsReauth = !tokenFormatMismatch && /401|unauthorized|419|invalid_token|404/i.test(raw);
       if (needsReauth) {
         await markConnectionFailed(context.userId).catch(() => {});
       }
@@ -56,9 +61,11 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
       const clean = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
       return {
         ok: false,
-        detail: needsReauth
-          ? "Swiggy rejected the saved sign-in. Tap Connect Swiggy and sign in again with your phone + OTP."
-          : clean || "Unknown error",
+        detail: tokenFormatMismatch
+          ? "Your Swiggy sign-in completed, but Swiggy's MCP server rejected the token format it issued (Incorrect alg in MCP JWT). Reconnecting will not fix this; please share this message with the Swiggy Builders team."
+          : needsReauth
+            ? "Swiggy rejected the saved sign-in. Tap Connect Swiggy and sign in again with your phone + OTP."
+            : clean || "Unknown error",
       };
     }
   });
