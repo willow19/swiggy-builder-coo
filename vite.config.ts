@@ -14,12 +14,16 @@ export default defineConfig({
   },
   vite: {
     resolve: {
-      alias: {
-        // pkce-challenge (used by @ai-sdk/mcp OAuth) has no "default"/workerd
-        // export condition, so the Worker build fails to resolve it. Its
-        // browser build uses Web Crypto only, which the runtime supports.
-        "pkce-challenge": "pkce-challenge/dist/index.browser.js",
-      },
+      alias: [
+        {
+          // pkce-challenge (used by @ai-sdk/mcp OAuth) has no "default"/workerd
+          // export condition, so the Worker build fails to resolve it. Point
+          // the import directly at its Web Crypto browser build (absolute
+          // path bypasses package "exports" condition resolution).
+          find: /^pkce-challenge$/,
+          replacement: "/dev-server/node_modules/pkce-challenge/dist/index.browser.js",
+        },
+      ],
     },
   },
 });
