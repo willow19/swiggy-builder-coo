@@ -1,24 +1,47 @@
-## Problem
+# Swiggy MCP Dry Run — Live Integration (Phase 2)
 
-The chat persists all prior messages from the `messages` table and rehydrates them on every load, so the AI always replies with old context. There's no way to start fresh.
+Now that Swiggy has whitelisted our redirect URIs, connect the working MVP to the real Swiggy MCP servers, replacing the mock catalog with live data — while keeping the confirm-first architecture intact.
 
-## Solution
+## Go-live rules from Swiggy (to follow throughout)
 
-Add a **New chat** button in the header that clears the current conversation — both the UI state and the persisted server-side history for the signed-in user — so the next message starts with a clean slate.
+1. **Ramp gradually** — test against real calls ourselves first (single test account) before pointing any other traffic at it. Small blast radius for auth/payload mismatches.
+2. **Redirect URIs must stay whitelisted** — we will use ONLY the two already-whitelisted URIs:
+   - Prod: `https://project--8fc12dfd-8cdb-40eb-b010-2ad84b202a12.lovable.app/api/public/swiggy/callback`
+   - Preview: `https://project--8fc12dfd-8cdb-40eb-b010-2ad84b202a12-dev.lovable.app/api/public/swiggy/callback`
+   Any new URI must be sent to Swiggy before shipping.
+3. **Defensive reads** — treat every tool response (availability, pricing, menus) as fresh state. No caching of catalog or price data; cart line items are re-validated at confirm time.
 
-## Changes
+## Build steps
 
-1. **New server function** `clearMessages` in `src/lib/household.functions.ts`
-   - Auth-protected (`requireSupabaseAuth`)
-   - Deletes all rows from `messages` scoped to `auth.uid()` (RLS also enforces this)
-   - Returns `{ ok: true }`
+### 1. OAuth callback route
+- Create `src/routes/api/public/swiggy/callback.ts` — handles the OAuth redirect, exchanges the code for tokens, stores them per-user.
+- New `swiggy_tokens` table (user_id, access_token, refresh_token, expires_at) with RLS + GRANTs; service-role-only access since only server code reads tokens.
 
-2. **Chat UI** in `src/routes/_authenticated/index.tsx`
-   - Add a "New chat" icon button (e.g. `Plus` or `RotateCcw` from lucide) in the header next to Household
-   - On click: show a small confirm (AlertDialog) → call `clearMessages` → `setMessages([])` → invalidate the `["messages"]` query → refocus textarea
-   - Empty-state suggestions reappear automatically since `messages.length === 0`
+### 2. Connect flow
+- "Connect Swiggy" entry point in the Household sheet: kicks off the OAuth flow with the whitelisted redirect URI.
+- Show connection status (connected / expired / reconnect) in the Household sheet.
 
-## Out of scope (v1)
+### 3. MCP client (server-side)
+- A server module that talks to Swiggy's MCP servers (Food, Instamart) with the user's access token.
+- Dry-run diagnostics: a server function that calls a low-risk read tool (e.g. address/cart search) and reports success/failure — our "small slice of traffic" check for auth or payload mismatches.
 
-- Multiple named threads / thread list — the app is one-conversation by design. If you later want thread history, that's a separate v2 feature.
-- No changes to the AI agent, pending actions, or profile.
+### 4. Swap mock catalog for live tools
+- Extend the chat API (`src/routes/api/chat.ts`): when the user has a connected Swiggy account, give the agent real MCP tools (search instamart / food) alongside `draft_cart`.
+- `draft_cart` keeps producing pending actions — no auto-ordering. At confirm time, re-fetch live price/availability and flag changes (rule 3).
+- Fall back to the mock catalog when Swiggy isn't connected, so the demo keeps working.
+
+### 5. Dry-run validation checklist
+- Sign in with a test account → Connect Swiggy → confirm tokens stored.
+- Run the diagnostic read tool → verify auth + payload shape.
+- Chat: "we need groceries for the weekend" → agent uses live Instamart search → draft cart → confirm card shows live prices.
+- Verify price-change handling: stale draft re-validates before confirm.
+
+## Out of scope (unchanged)
+- Actual order placement / payment — still confirm-first; confirm stops at "approved".
+- Dineout integration and v2 memory features (automatic preference learning).
+- No new redirect URIs without notifying Swiggy first.
+
+## Technical notes
+- MCP client runs only in server code (Worker-safe, fetch-based); tokens never reach the browser.
+- Secrets (Swiggy client ID/secret) stored via the secrets manager, read inside handlers only.
+- `swiggy_tokens` gets GRANTs + RLS in the same migration; read only via server code.
