@@ -18,7 +18,7 @@ import { getRequestUrl } from "@tanstack/react-start/server";
 const PROJECT_ID = "8fc12dfd-8cdb-40eb-b010-2ad84b202a12";
 
 export const SWIGGY_MCP_SERVERS = {
-  instamart: "https://mcp.swiggy.com/instamart",
+  instamart: "https://mcp.swiggy.com/im",
   food: "https://mcp.swiggy.com/food",
 } as const;
 

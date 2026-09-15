@@ -5,9 +5,10 @@
 - [x] Swiggy MCP integration: OAuth flow, `swiggy_connections` table, callback route, connect UI in Household sheet, live tools in chat (read-only whitelist), live items in draft_cart
 - [x] Dry run verified: consent page opens, dev redirect URI accepted, token exchange path ready
 
-## Open — blocked on user
-- [ ] Complete Swiggy sign-in with your own mobile number (OTP) via Household → Connect Swiggy — only you can do this
-- [ ] After connecting: click "Run check" in the Household sheet to verify the live read, then try a chat like "khichdi and tomato soup from Swiggy"
+## Open — verification needed
+- [ ] Publish the corrected Instamart endpoint (`/im`, replacing the undocumented `/instamart`) and run the connection check again
+- [ ] If Swiggy still reports "Incorrect alg in MCP JWT", send the OAuth/MCP token-verifier mismatch to the Swiggy Builders team
+- [ ] After the live read succeeds, try a chat like "khichdi and tomato soup from Swiggy"
 
 ## Next
 - [ ] Revalidate live prices at confirm time (after dry run shows real payload shapes)
