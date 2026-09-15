@@ -320,7 +320,7 @@ export async function createSwiggyMcpClient(
       type: "http",
       url: SWIGGY_MCP_SERVERS[server],
       authProvider: provider,
-      redirect: "manual",
+      redirect: "follow",
     },
   });
 }
