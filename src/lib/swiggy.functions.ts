@@ -53,10 +53,15 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
       // JWT". Re-authentication produces the same token type, so distinguish
       // that provider-side mismatch from an expired or revoked sign-in.
       const tokenFormatMismatch = /incorrect alg/i.test(raw);
-      const needsReauth = !tokenFormatMismatch && /401|unauthorized|419|invalid_token|404/i.test(raw);
+      // A 404 means we called the wrong endpoint, not that the sign-in died —
+      // keep the saved token so the user does not have to redo the OTP.
+      const notFound = /\b404\b/.test(raw);
+      const needsReauth =
+        !tokenFormatMismatch && !notFound && /401|unauthorized|419|invalid_token/i.test(raw);
       if (needsReauth) {
         await markConnectionFailed(context.userId).catch(() => {});
       }
+
       // Swiggy sometimes answers with a full HTML page; never surface that raw.
       const clean = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
       return {
