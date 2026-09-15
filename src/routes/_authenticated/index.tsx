@@ -118,6 +118,14 @@ function ChatApp() {
 
   const isEmpty = messages.length === 0 && !loadingHistory;
 
+  // Keep the typing indicator up for as long as the assistant is working and
+  // hasn't produced any visible text yet (tool calls can take a while).
+  const lastMessage = messages[messages.length - 1];
+  const lastAssistantHasText =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some((p) => p.type === "text" && Boolean((p as { text?: string }).text));
+  const showThinking = busy && !lastAssistantHasText;
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="flex items-center gap-2 border-b border-border bg-card/80 px-3 py-3 backdrop-blur sm:gap-3 sm:px-4">
