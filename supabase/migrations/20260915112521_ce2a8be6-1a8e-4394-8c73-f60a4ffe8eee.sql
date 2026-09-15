@@ -1,0 +1,1 @@
+CREATE POLICY "No direct client access to Swiggy connections" ON public.swiggy_connections FOR ALL TO authenticated USING (false) WITH CHECK (false);

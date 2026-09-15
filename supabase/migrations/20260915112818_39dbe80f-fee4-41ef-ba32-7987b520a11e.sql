@@ -1,0 +1,1 @@
+ALTER TABLE public.swiggy_connections ADD COLUMN IF NOT EXISTS return_to TEXT;

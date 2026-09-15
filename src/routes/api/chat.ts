@@ -15,6 +15,7 @@ import {
   withLovableAiGatewayRunIdHeader,
 } from "@/lib/ai-gateway.server";
 import { createUserScopedClient } from "@/lib/supabase-bearer.server";
+import { loadSwiggyTools } from "@/lib/swiggy.server";
 
 const LOVABLE_AIG_RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
 
@@ -78,6 +79,19 @@ export const Route = createFileRoute("/api/chat")({
           )
           .join("\n");
 
+        // Load live Swiggy tools when the user has a connected account.
+        // Defensive by design: any failure falls back to the mock catalog.
+        const live = await loadSwiggyTools(userId);
+
+        const liveRules = live
+          ? `
+LIVE SWIGGY MODE
+- The user's Swiggy account is connected. You have live tools prefixed "instamart__" and "food__" (search_products, search_restaurants, get_restaurant_menu, your_go_to_items, get_addresses, coupons, order history).
+- ALWAYS prefer live search results over the static catalog below when the user asks for real items. Prices and availability change through the day — treat every tool response as fresh state and never rely on earlier results.
+- When drafting from live results, pass each item's live product id as productId AND include its live name and price (and brand/unit when available) in the draft_cart call.
+- You only have read/search tools. Never attempt to modify a real Swiggy cart or place a real order.`
+          : "";
+
         const systemPrompt = `You are the household's "Chief of Staff" — a warm, practical AI concierge for a busy dual-income Indian family. You help with everyday situations (sick child, surprise guests, weekend groceries, running low on staples) by recommending a shopping/food cart from the available catalog.
 
 HOUSEHOLD PROFILE
@@ -89,10 +103,10 @@ HOUSEHOLD PROFILE
 RULES
 1. Always respect dietary preferences. If the household is vegetarian, never add non-veg items. If Jain, avoid onion/garlic/potato items. Prefer the household's favourite brands when an equivalent exists.
 2. Keep the cart within the budget cap when reasonable; if it must exceed, say so and explain.
-3. When the user wants you to prepare an order, call the "draft_cart" tool with items chosen ONLY from the catalog below (reference items by their exact id). Pick sensible quantities for a family.
+3. When the user wants you to prepare an order, call the "draft_cart" tool with items chosen ONLY from the catalog below (reference items by their exact id) or from live Swiggy search results when in live mode. Pick sensible quantities for a family.
 4. NEVER claim an order is placed. You only prepare a DRAFT that the user must Confirm. After calling draft_cart, briefly explain your choices in 1-3 sentences and mention 1-2 alternatives they could swap in.
 5. Be concise, friendly, and use Indian context. Use ₹ for prices.
-
+${liveRules}
 CATALOG (id | name | brand | category | service | price | veg | tags)
 ${catalog}`;
 
@@ -107,8 +121,18 @@ ${catalog}`;
             items: z
               .array(
                 z.object({
-                  productId: z.string().describe("Catalog product id"),
+                  productId: z.string().describe("Catalog or live Swiggy product id"),
                   quantity: z.number().int().min(1).max(20),
+                  name: z
+                    .string()
+                    .optional()
+                    .describe("Live item name (required for live Swiggy items)"),
+                  price: z
+                    .number()
+                    .optional()
+                    .describe("Live item unit price in ₹ (required for live Swiggy items)"),
+                  brand: z.string().optional(),
+                  unit: z.string().optional(),
                 }),
               )
               .min(1),
@@ -117,16 +141,32 @@ ${catalog}`;
             const lineItems = items
               .map((it) => {
                 const p = products.find((prod) => prod.id === it.productId);
-                if (!p) return null;
-                return {
-                  productId: p.id,
-                  name: p.name,
-                  brand: p.brand ?? "Generic",
-                  unit: p.unit,
-                  price: Number(p.price),
-                  quantity: it.quantity,
-                  lineTotal: Number(p.price) * it.quantity,
-                };
+                if (p) {
+                  return {
+                    productId: p.id,
+                    name: p.name,
+                    brand: p.brand ?? "Generic",
+                    unit: p.unit,
+                    price: Number(p.price),
+                    quantity: it.quantity,
+                    lineTotal: Number(p.price) * it.quantity,
+                    source: "mock" as const,
+                  };
+                }
+                // Live Swiggy item: name and price come from the fresh tool response.
+                if (it.name && typeof it.price === "number" && it.price > 0) {
+                  return {
+                    productId: it.productId,
+                    name: it.name,
+                    brand: it.brand ?? "Swiggy",
+                    unit: it.unit ?? null,
+                    price: it.price,
+                    quantity: it.quantity,
+                    lineTotal: it.price * it.quantity,
+                    source: "live" as const,
+                  };
+                }
+                return null;
               })
               .filter((x): x is NonNullable<typeof x> => x !== null);
 
@@ -169,8 +209,17 @@ ${catalog}`;
           model,
           system: systemPrompt,
           messages: await convertToModelMessages(messages),
-          tools: { draft_cart: draftCart },
+          tools: {
+            draft_cart: draftCart,
+            ...(live ? (live.tools as Record<string, never>) : {}),
+          },
           stopWhen: stepCountIs(50),
+          onFinish: async () => {
+            await live?.close();
+          },
+          onError: async () => {
+            await live?.close();
+          },
         });
 
         const response = result.toUIMessageStreamResponse({
