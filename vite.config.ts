@@ -12,4 +12,18 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    resolve: {
+      alias: [
+        {
+          // pkce-challenge (used by @ai-sdk/mcp OAuth) has no "default"/workerd
+          // export condition, so the Worker build fails to resolve it. Point
+          // the import directly at its Web Crypto browser build (absolute
+          // path bypasses package "exports" condition resolution).
+          find: /^pkce-challenge$/,
+          replacement: "/dev-server/node_modules/pkce-challenge/dist/index.browser.js",
+        },
+      ],
+    },
+  },
 });
