@@ -145,7 +145,9 @@ async function patchConnection(userId: string, patch: Record<string, unknown>) {
 }
 
 export async function markConnectionFailed(userId: string) {
-  await patchConnection(userId, { state: "failed", access_token: null });
+  // Keep the saved token: a single failed read must never cost the user another
+  // phone + OTP round. Only an explicit Disconnect clears credentials.
+  await patchConnection(userId, { state: "failed" });
 }
 
 /**
