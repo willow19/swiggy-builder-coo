@@ -395,6 +395,21 @@ export async function runSwiggyDiagnostic(userId: string): Promise<{
   ok: boolean;
   detail: string;
 }> {
+  // Without a live token the MCP client silently restarts OAuth discovery and
+  // Swiggy answers with an HTML page — check state first and say so plainly.
+  const row = await getConnectionRow(userId);
+  if (!row?.access_token || row.state !== "ready") {
+    return {
+      ok: false,
+      detail: "Swiggy isn't linked right now. Tap Connect Swiggy and sign in with your phone + OTP.",
+    };
+  }
+  if (row.expires_at && new Date(row.expires_at).getTime() < Date.now() + 60_000) {
+    return {
+      ok: false,
+      detail: "Your Swiggy link has expired (tokens last 5 days). Tap Connect Swiggy to sign in again.",
+    };
+  }
   const client = await createSwiggyMcpClient(userId, "instamart");
   try {
     const tools = (await client.tools()) as unknown as Record<
