@@ -267,13 +267,15 @@ function MessageBubble({ message }: { message: UIMessage }) {
               <div
                 key={i}
                 className={
-                  "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm shadow-sm " +
+                  "rounded-2xl px-4 py-2.5 text-sm shadow-sm " +
                   (isUser
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-card-foreground")
                 }
               >
-                {part.text}
+                <div className="space-y-2 [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_em]:italic [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+                </div>
               </div>
             );
           }
