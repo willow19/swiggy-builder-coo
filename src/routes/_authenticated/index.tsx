@@ -46,10 +46,17 @@ function ChatApp() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hydratedRef = useRef(false);
 
   const { data: savedMessages, isLoading: loadingHistory } = useQuery({
     queryKey: ["messages"],
     queryFn: () => fetchMessages(),
+    // History is only used to hydrate the chat once. Refetching on focus/reconnect
+    // used to overwrite the live conversation with a stale snapshot.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 
   const initialMessages = useMemo<UIMessage[]>(
@@ -83,9 +90,14 @@ function ChatApp() {
     onError: () => {},
   });
 
+  // Hydrate saved history exactly once per session so a later refetch can never
+  // replace freshly streamed replies with an older snapshot.
   useEffect(() => {
+    if (hydratedRef.current) return;
+    if (loadingHistory) return;
+    hydratedRef.current = true;
     if (initialMessages.length) setMessages(initialMessages);
-  }, [initialMessages, setMessages]);
+  }, [initialMessages, loadingHistory, setMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
