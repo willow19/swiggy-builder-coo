@@ -26,6 +26,35 @@ export type SwiggyServerName = keyof typeof SWIGGY_MCP_SERVERS;
 
 const SWIGGY_SCOPE = "mcp:tools mcp:resources mcp:prompts";
 
+/**
+ * Swiggy's protected-resource well-known endpoint serves an HTML page instead
+ * of JSON, which breaks automatic OAuth discovery. Intercept that one request
+ * and answer with the known-correct metadata so discovery proceeds against
+ * the real issuer (https://mcp.swiggy.com/auth).
+ */
+const SWIGGY_RESOURCE_METADATA = {
+  resource: "https://mcp.swiggy.com",
+  authorization_servers: ["https://mcp.swiggy.com/auth"],
+  scopes_supported: ["mcp:tools", "mcp:resources", "mcp:prompts"],
+  bearer_methods_supported: ["header"],
+};
+
+function swiggyOAuthFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (url.includes("/.well-known/oauth-protected-resource")) {
+    return Promise.resolve(
+      new Response(JSON.stringify(SWIGGY_RESOURCE_METADATA), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  }
+  return fetch(input, init);
+}
+
 export type SwiggyConnectionRow = {
   id: string;
   user_id: string;
