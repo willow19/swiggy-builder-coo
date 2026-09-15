@@ -52,6 +52,11 @@ function swiggyOAuthFetch(
       }),
     );
   }
+  // The edge runtime rejects `redirect: "error"`; normalise it so OAuth
+  // discovery and token exchange work in production too.
+  if (init?.redirect === "error") {
+    return fetch(input, { ...init, redirect: "manual" });
+  }
   return fetch(input, init);
 }
 
@@ -315,7 +320,7 @@ export async function createSwiggyMcpClient(
       type: "http",
       url: SWIGGY_MCP_SERVERS[server],
       authProvider: provider,
-      redirect: "error",
+      redirect: "follow",
     },
   });
 }
