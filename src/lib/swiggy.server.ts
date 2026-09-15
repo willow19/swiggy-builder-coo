@@ -321,6 +321,10 @@ export async function createSwiggyMcpClient(
       url: SWIGGY_MCP_SERVERS[server],
       authProvider: provider,
       redirect: "follow",
+      // The edge runtime throws "Illegal invocation" if `globalThis.fetch` is
+      // passed around unbound, so always hand over a bound wrapper.
+      fetch: (input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+        swiggyOAuthFetch(input as RequestInfo | URL, init),
     },
   });
 }
