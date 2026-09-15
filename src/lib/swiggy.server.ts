@@ -81,23 +81,29 @@ export type SwiggyConnectionRow = {
  */
 export function resolveSwiggyUrls(): { redirectUrl: string; returnTo: string } {
   let origin = `https://project--${PROJECT_ID}.lovable.app`;
+  // Friendly published host used only for the "back to the app" link; the
+  // redirect URI must stay on the whitelisted project-- host.
+  let appOrigin = "https://swiggy-builder-coo.lovable.app";
   try {
     const url = getRequestUrl();
     if (url.hostname.includes("-dev")) {
       origin = `https://project--${PROJECT_ID}-dev.lovable.app`;
+      appOrigin = origin;
     } else if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
       // Local dev isn't whitelisted; fall back to the dev URL so the OAuth
       // flow still completes, then send the user back to the dev app.
       origin = `https://project--${PROJECT_ID}-dev.lovable.app`;
+      appOrigin = origin;
     }
   } catch {
     // no request context — default to production
   }
   return {
     redirectUrl: `${origin}/api/public/swiggy/callback`,
-    returnTo: `${origin}/`,
+    returnTo: `${appOrigin}/`,
   };
 }
+
 
 async function adminDb() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
