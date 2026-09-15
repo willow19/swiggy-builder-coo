@@ -53,10 +53,15 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
       // JWT". Re-authentication produces the same token type, so distinguish
       // that provider-side mismatch from an expired or revoked sign-in.
       const tokenFormatMismatch = /incorrect alg/i.test(raw);
-      const needsReauth = !tokenFormatMismatch && /401|unauthorized|419|invalid_token|404/i.test(raw);
+      // A 404 means we called the wrong endpoint, not that the sign-in died —
+      // keep the saved token so the user does not have to redo the OTP.
+      const notFound = /\b404\b/.test(raw);
+      const needsReauth =
+        !tokenFormatMismatch && !notFound && /401|unauthorized|419|invalid_token/i.test(raw);
       if (needsReauth) {
         await markConnectionFailed(context.userId).catch(() => {});
       }
+
       // Swiggy sometimes answers with a full HTML page; never surface that raw.
       const clean = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
       return {
@@ -65,7 +70,9 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
           ? "Your Swiggy sign-in completed, but Swiggy's MCP server rejected the token format it issued (Incorrect alg in MCP JWT). Reconnecting will not fix this; please share this message with the Swiggy Builders team."
           : needsReauth
             ? "Swiggy rejected the saved sign-in. Tap Connect Swiggy and sign in again with your phone + OTP."
-            : clean || "Unknown error",
+            : notFound
+              ? "Swiggy's live service answered 'not found' for that request. Your sign-in is still saved — please publish the latest version and try the check again."
+              : clean || "Unknown error",
       };
     }
   });
