@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChefHat, Send, SlidersHorizontal, LogOut, Loader2, MessageSquarePlus } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getMessages, clearMessages } from "@/lib/household.functions";
