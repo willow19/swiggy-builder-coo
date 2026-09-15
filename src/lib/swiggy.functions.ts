@@ -47,10 +47,18 @@ export const checkSwiggyConnection = createServerFn({ method: "POST" })
     try {
       return await runSwiggyDiagnostic(context.userId);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Unknown error";
-      if (/401|unauthorized|419/i.test(message)) {
+      const raw = e instanceof Error ? e.message : "Unknown error";
+      const needsReauth = /401|unauthorized|419|invalid_token|incorrect alg|404/i.test(raw);
+      if (needsReauth) {
         await markConnectionFailed(context.userId).catch(() => {});
       }
-      return { ok: false, detail: message };
+      // Swiggy sometimes answers with a full HTML page; never surface that raw.
+      const clean = raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+      return {
+        ok: false,
+        detail: needsReauth
+          ? "Swiggy rejected the saved sign-in. Tap Connect Swiggy and sign in again with your phone + OTP."
+          : clean || "Unknown error",
+      };
     }
   });
