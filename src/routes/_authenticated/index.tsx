@@ -188,7 +188,7 @@ function ChatApp() {
             <MessageBubble key={message.id} message={message} />
           ))}
 
-          {status === "submitted" && (
+          {showThinking && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 rounded-2xl bg-card px-4 py-3 shadow-sm">
                 <Dot /> <Dot /> <Dot />
