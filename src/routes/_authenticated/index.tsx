@@ -5,6 +5,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ChefHat, Send, SlidersHorizontal, LogOut, Loader2, MessageSquarePlus } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { supabase } from "@/integrations/supabase/client";
 import { getMessages, clearMessages } from "@/lib/household.functions";
@@ -118,6 +120,14 @@ function ChatApp() {
 
   const isEmpty = messages.length === 0 && !loadingHistory;
 
+  // Keep the typing indicator up for as long as the assistant is working and
+  // hasn't produced any visible text yet (tool calls can take a while).
+  const lastMessage = messages[messages.length - 1];
+  const lastAssistantHasText =
+    lastMessage?.role === "assistant" &&
+    lastMessage.parts.some((p) => p.type === "text" && Boolean((p as { text?: string }).text));
+  const showThinking = busy && !lastAssistantHasText;
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <header className="flex items-center gap-2 border-b border-border bg-card/80 px-3 py-3 backdrop-blur sm:gap-3 sm:px-4">
@@ -188,7 +198,7 @@ function ChatApp() {
             <MessageBubble key={message.id} message={message} />
           ))}
 
-          {status === "submitted" && (
+          {showThinking && (
             <div className="flex justify-start">
               <div className="flex items-center gap-1.5 rounded-2xl bg-card px-4 py-3 shadow-sm">
                 <Dot /> <Dot /> <Dot />
@@ -259,13 +269,15 @@ function MessageBubble({ message }: { message: UIMessage }) {
               <div
                 key={i}
                 className={
-                  "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm shadow-sm " +
+                  "rounded-2xl px-4 py-2.5 text-sm shadow-sm " +
                   (isUser
                     ? "bg-primary text-primary-foreground"
                     : "bg-card text-card-foreground")
                 }
               >
-                {part.text}
+                <div className="space-y-2 [&_a]:underline [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_em]:italic [&_h1]:text-base [&_h1]:font-bold [&_h2]:text-sm [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-semibold [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+                </div>
               </div>
             );
           }
