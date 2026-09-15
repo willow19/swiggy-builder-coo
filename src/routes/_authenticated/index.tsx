@@ -89,9 +89,14 @@ function ChatApp() {
     onError: () => {},
   });
 
+  // Hydrate saved history exactly once per session so a later refetch can never
+  // replace freshly streamed replies with an older snapshot.
   useEffect(() => {
+    if (hydratedRef.current) return;
+    if (loadingHistory) return;
+    hydratedRef.current = true;
     if (initialMessages.length) setMessages(initialMessages);
-  }, [initialMessages, setMessages]);
+  }, [initialMessages, loadingHistory, setMessages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
