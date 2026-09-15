@@ -260,6 +260,7 @@ export async function startSwiggyAuth(
     result = await auth(provider, {
       serverUrl: SWIGGY_MCP_SERVERS.instamart,
       scope: SWIGGY_SCOPE,
+      fetchFn: swiggyOAuthFetch,
     });
   } catch (e) {
     console.error("[swiggy] auth() failed:", e);
@@ -291,6 +292,7 @@ export async function finishSwiggyAuth(
     authorizationCode: code,
     callbackState: oauthState,
     scope: SWIGGY_SCOPE,
+    fetchFn: swiggyOAuthFetch,
   });
   return { returnTo: row.return_to ?? returnTo };
 }
