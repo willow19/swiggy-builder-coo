@@ -1,10 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, PlugZap, RefreshCw, Unplug } from "lucide-react";
 import { toast } from "sonner";
 
 import { getHousehold, saveHousehold } from "@/lib/household.functions";
+import {
+  getSwiggyStatus,
+  connectSwiggy,
+  disconnectSwiggy,
+  checkSwiggyConnection,
+} from "@/lib/swiggy.functions";
 import {
   Sheet,
   SheetContent,
@@ -184,9 +190,148 @@ export function HouseholdSheet({
               {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save household
             </Button>
+
+            <SwiggySection />
           </div>
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+function SwiggySection() {
+  const queryClient = useQueryClient();
+  const fetchStatus = useServerFn(getSwiggyStatus);
+  const connect = useServerFn(connectSwiggy);
+  const disconnect = useServerFn(disconnectSwiggy);
+  const runCheck = useServerFn(checkSwiggyConnection);
+
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["swiggy_status"],
+    queryFn: () => fetchStatus(),
+    refetchOnWindowFocus: true,
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: () => connect(),
+    onSuccess: (result) => {
+      if (result.status === "ready") {
+        queryClient.invalidateQueries({ queryKey: ["swiggy_status"] });
+        toast.success("Swiggy already connected");
+      } else {
+        window.open(result.authUrl, "_blank", "noopener,noreferrer");
+        toast.message("Finish signing in with Swiggy in the new tab, then come back.");
+      }
+    },
+    onError: () => toast.error("Could not start Swiggy connection"),
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: () => disconnect(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["swiggy_status"] });
+      toast.success("Swiggy disconnected");
+    },
+    onError: () => toast.error("Could not disconnect"),
+  });
+
+  const checkMutation = useMutation({
+    mutationFn: () => runCheck(),
+    onSuccess: (result) => {
+      if (result.ok) toast.success(result.detail);
+      else {
+        toast.error(`Connection check failed: ${result.detail}`);
+        queryClient.invalidateQueries({ queryKey: ["swiggy_status"] });
+      }
+    },
+    onError: () => toast.error("Connection check failed"),
+  });
+
+  const state = status?.state ?? "disconnected";
+  const label =
+    state === "ready"
+      ? "Connected"
+      : state === "authenticating"
+        ? "Finish sign-in"
+        : state === "expired" || state === "failed"
+          ? "Reconnect needed"
+          : "Not connected";
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-secondary/40 p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Swiggy account</p>
+          <p className="text-xs text-muted-foreground">
+            Link Swiggy for live Instamart & Food results. Nothing is ordered without your
+            confirmation.
+          </p>
+        </div>
+        <span
+          className={
+            "rounded-full px-2 py-0.5 text-xs font-medium " +
+            (state === "ready"
+              ? "bg-accent/15 text-accent"
+              : "bg-muted px-2 py-0.5 text-muted-foreground")
+          }
+        >
+          {isLoading ? "…" : label}
+        </span>
+      </div>
+
+      {status?.authUrl && state === "authenticating" && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full"
+          onClick={() => window.open(status.authUrl!, "_blank", "noopener,noreferrer")}
+        >
+          Continue Swiggy sign-in
+        </Button>
+      )}
+
+      <div className="flex gap-2">
+        {state !== "ready" ? (
+          <Button
+            size="sm"
+            className="flex-1"
+            onClick={() => connectMutation.mutate()}
+            disabled={connectMutation.isPending}
+          >
+            {connectMutation.isPending ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <PlugZap className="mr-1.5 h-4 w-4" />
+            )}
+            Connect Swiggy
+          </Button>
+        ) : (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1"
+              onClick={() => checkMutation.mutate()}
+              disabled={checkMutation.isPending}
+            >
+              {checkMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-1.5 h-4 w-4" />
+              )}
+              Run check
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => disconnectMutation.mutate()}
+              disabled={disconnectMutation.isPending}
+            >
+              <Unplug className="mr-1.5 h-4 w-4" /> Disconnect
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

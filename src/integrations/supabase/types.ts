@@ -152,6 +152,54 @@ export type Database = {
         }
         Relationships: []
       }
+      swiggy_connections: {
+        Row: {
+          access_token: string | null
+          auth_url: string | null
+          client_information: Json | null
+          code_verifier: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          oauth_state: string | null
+          return_to: string | null
+          scope: string | null
+          state: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          auth_url?: string | null
+          client_information?: Json | null
+          code_verifier?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          oauth_state?: string | null
+          return_to?: string | null
+          scope?: string | null
+          state?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          auth_url?: string | null
+          client_information?: Json | null
+          code_verifier?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          oauth_state?: string | null
+          return_to?: string | null
+          scope?: string | null
+          state?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
