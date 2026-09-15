@@ -46,6 +46,7 @@ function ChatApp() {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hydratedRef = useRef(false);
 
   const { data: savedMessages, isLoading: loadingHistory } = useQuery({
     queryKey: ["messages"],
