@@ -50,6 +50,12 @@ function ChatApp() {
   const { data: savedMessages, isLoading: loadingHistory } = useQuery({
     queryKey: ["messages"],
     queryFn: () => fetchMessages(),
+    // History is only used to hydrate the chat once. Refetching on focus/reconnect
+    // used to overwrite the live conversation with a stale snapshot.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
   });
 
   const initialMessages = useMemo<UIMessage[]>(
